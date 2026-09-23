@@ -1,0 +1,37 @@
+name: Run Playwright Test Shard
+description: Install Playwright browser, run a test shard, and upload the blob report
+
+inputs:
+  shard-index:
+    description: Index of this shard (1-based)
+    required: true
+  total-shards:
+    required: false
+    default: "2"
+  browser:
+    description: Playwright browser to install
+    required: false
+    default: "chromium"
+  test-args:
+    description: Extra arguments appended to the playwright test command
+    required: false
+    default: ""
+  blob-retention-days:
+    required: false
+    default: "7"
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: npx playwright install ${{ inputs.browser }} --with-deps
+
+    - shell: bash
+      run: npx playwright test --shard=${{ inputs.shard-index }}/${{ inputs.total-shards }} ${{ inputs.test-args }}
+
+    - if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: blob-report-${{ inputs.shard-index }}
+        path: blob-report/
+        retention-days: ${{ inputs.blob-retention-days }}
